@@ -443,7 +443,7 @@ Si la subconsulta devuelve al menos una fila, EXISTS devuelve true; de lo contra
 
 
 5. ¿Qué diferencia existe entre EXISTS y NOT EXISTS?
-EXISTS devuelve true si la subconsulta devuelve al menos una fila, mientras que NOT EXISTS devuelve true si la subconsulta no devuelve ninguna fila.
+EXISTS ayuda a determinar si una subconsulta devuelve al menos una fila, mientras que NOT EXISTS verifica si la subconsulta no devuelve ninguna fila.
 
 
 6. ¿Qué es una subconsulta correlacionada?

@@ -420,6 +420,93 @@ Esto podría indicar que esta póliza representa un menor riesgo financiero para
 
 
 
+-- Reto 1.Riesgo elevado
+Encuentre los clientes que tengan al menos una póliza asociada a un siniestro cuyo monto pagado sea superior al promedio de todos los siniestros.
+
+SELECT *
+FROM Clientes
+WHERE id_cliente IN (
+    SELECT id_cliente
+    FROM Polizas
+    WHERE id_poliza IN (
+        SELECT id_poliza
+        FROM Siniestros
+        WHERE monto_pagado > (SELECT AVG(monto_pagado) FROM Siniestros)
+    )
+);
+
+interpretación: Los clientes que tienen al menos una póliza asociada a un siniestro con un monto pagado superior al promedio 
+representan un grupo de asegurados con un mayor riesgo financiero para la aseguradora.
+Estos clientes han experimentado eventos adversos significativos que han resultado en pagos elevados, 
+lo que podría influir en la evaluación del riesgo y en la determinación de primas futuras.
+La aseguradora debe analizar estos casos para identificar factores de riesgo y 
+considerar ajustes en la política de suscripción o en la cobertura ofrecida a clientes con características similares.
+
+
+-- Reto 2. Alta exposición
+Encuentre los clientes cuya suma asegurada total sea superior a la suma asegurada promedio de todos los clientes. Puede usar GROUP BY dentro de una subconsulta.
+
+SELECT *
+FROM Clientes
+WHERE id_cliente IN (
+    SELECT id_cliente
+    FROM Polizas
+    GROUP BY id_cliente
+    HAVING SUM(suma_asegurada) > 
+        (SELECT AVG(total_suma_asegurada) 
+        FROM (SELECT SUM(suma_asegurada) AS total_suma_asegurada 
+        FROM Polizas 
+        GROUP BY id_cliente) AS subconsulta)
+);
+
+interpretación: Los clientes cuya suma asegurada total es superior a la suma asegurada promedio de todos los clientes representan 
+un grupo de asegurados con una mayor exposición financiera para la aseguradora.
+Estos clientes tienen pólizas que cubren montos más altos, lo que podría indicar un mayor riesgo de siniestros significativos y,
+por lo tanto, un mayor impacto financiero en caso de reclamaciones.
+La aseguradora debe evaluar si estas pólizas están adecuadamente valoradas y si los clientes están dispuestos
+a pagar primas más altas para cubrir este riesgo, así como considerar ajustes en la política de suscripción o en la determinación de primas para 
+clientes con características similares.
+
+
+
+-- Reto 3. Perfil combinado de riesgo
+Encuentre clientes con ingreso superior al promedio, al menos una póliza, al menos un siniestro y algún monto_pagado superior al promedio.
+
+SELECT *
+FROM Clientes
+WHERE ingreso_mensual > (SELECT AVG(ingreso_mensual) FROM Clientes)
+    AND id_cliente IN (SELECT id_cliente FROM Polizas)
+    AND id_cliente IN (SELECT id_cliente FROM Siniestros)
+    AND id_cliente IN (SELECT id_cliente FROM Siniestros 
+    WHERE monto_pagado > (SELECT AVG(monto_pagado) FROM Siniestros));
+
+
+interpretación: Los clientes que cumplen con este perfil combinado de riesgo representan un grupo de asegurados con un mayor riesgo financiero para la aseguradora.
+Estos clientes tienen ingresos superiores al promedio, lo que podría indicar una mayor capacidad de pago, pero también tienen al menos una póliza y
+al menos un siniestro con un monto pagado superior al promedio, lo que sugiere que han experimentado eventos adversos significativos.
+La aseguradora debe analizar estos casos para identificar factores de riesgo y considerar ajustes en la política de suscripción o en la cobertura ofrecida a 
+clientes con características similares, así como evaluar la adecuación de las primas cobradas para cubrir este riesgo potencial.
+
+
+-- Reto 4. Siniestralidad simplificada
+Calcule por póliza la razón monto pagado total / prima anual e identifique las pólizas cuya razón sea superior al promedio de las pólizas con siniestros.
+
+SELECT id_poliza, tipo_seguro, prima_anual,
+    (SELECT SUM(monto_pagado) FROM Siniestros WHERE Siniestros.id_poliza = Polizas.id_poliza) AS monto_pagado_total,
+    (SELECT SUM(monto_pagado) FROM Siniestros WHERE Siniestros.id_poliza = Polizas.id_poliza) / prima_anual AS razon
+FROM Polizas
+WHERE (SELECT SUM(monto_pagado) FROM Siniestros WHERE Siniestros.id_poliza = Polizas.id_poliza) / prima_anual > 
+    (SELECT AVG((SELECT SUM(monto_pagado) FROM Siniestros WHERE Siniestros.id_poliza = Polizas.id_poliza) / prima_anual) 
+    FROM Polizas WHERE EXISTS (SELECT 1 FROM Siniestros WHERE Siniestros.id_poliza = Polizas.id_poliza));
+
+
+interpretación: Las pólizas cuya razón monto pagado total / prima anual es superior al promedio de las pólizas con siniestros representan
+un mayor riesgo financiero para la aseguradora.
+Esto podría indicar que estas pólizas han experimentado siniestros significativos en relación con las primas cobradas, 
+lo que podría influir en la evaluación del riesgo y en la determinación de primas futuras.
+La aseguradora debe analizar estos casos para identificar factores de riesgo y considerar ajustes en la política de suscripción
+o en la cobertura ofrecida a clientes con características similares.
+
 
 -- Preguntas de Analisis
 
@@ -472,3 +559,5 @@ Para detectar clientes o pólizas de mayor riesgo utilizando subconsultas, se pu
 - Analizar clientes con ingresos superiores al promedio de su ciudad, lo que podría reflejar una mayor capacidad de pago y menor riesgo de incumplimiento.
 - Evaluar clientes cuyas pólizas tengan siniestros, ya que esto podría indicar un mayor riesgo asociado a estos clientes.
 - Comparar el monto_pagado de siniestros con el promedio, para identificar casos de alto impacto financiero y evaluar la probabilidad de futuros siniestros.
+
+

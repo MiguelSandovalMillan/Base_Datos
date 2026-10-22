@@ -35,7 +35,7 @@ SELECT * FROM alumno
 
 
 -- 1. Obtener el nombre de todos los alumnos que su primer apellido sea Martínez.
-SELECT nombre FROM alumno
+SELECT nombre, apellido1, apellido2 FROM alumno
 WHERE apellido1 = 'Martínez';
 
 -- 2. Obtener todos los datos del alumno que tiene un id igual a 9.

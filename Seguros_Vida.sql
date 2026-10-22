@@ -167,5 +167,5 @@ WHERE id_poliza IN (SELECT id_poliza FROM Siniestros);
 
 
 -- 5.Consultar el total de primas pagadas por un cliente específico
-SELECT SUM(monto_pagado) FROM Pago_Primas
-WHERE id_poliza IN (SELECT id_poliza FROM Polizas WHERE id_cliente = 1);
+SELECT  (SELECT id_cliente FROM Polizas) AS id_cliente, SUM(monto_pagado) AS total_primas FROM Pago_Primas
+    WHERE id_poliza IN (SELECT id_poliza FROM Polizas WHERE id_cliente = 1);

@@ -103,4 +103,4 @@ WHERE fecha_nacimiento BETWEEN  '1998-01-01' AND '1998-12-31';
 -- 9. Devuelve el listado de todos los alumnos que no nacieron en 1998.
 SELECT nombre, apellido1, apellido2, fecha_nacimiento
 FROM alumno
-WHERE fecha_nacimiento NOT BETWEEN  '1998-01-01' AND '1998-12-31';
+WHERE fecha_nacimiento NOT BETWEEN  '1998-01-01' AND '1998-12-31';  

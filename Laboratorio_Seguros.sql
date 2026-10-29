@@ -2,7 +2,7 @@ DROP TABLE IF EXISTS Polizas;
 DROP TABLE IF EXISTS Clientes;
 DROP TABLE IF EXISTS Agentes;
 DROP TABLE IF EXISTS Siniestros;
-
+DROP TABLE IF EXISTS Pagos;
 
 -- ===========================================================================
 -- ===========================CREAR_TABLAS====================================
@@ -147,15 +147,17 @@ SELECT nombre, ciudad FROM Clientes;
 
 -- 02. [Básica] Listar clientes de Morelia con edad mayor de 30 años.
 SELECT nombre, ciudad, edad FROM Clientes
-WHERE edad > 30;
+WHERE ciudad = 'Morelia' AND edad > 30;
 
 -- 03. [Básica] Mostrar pólizas activas, tipo y prima, ordenadas de mayor a menor prima.
-SELECT estado, tipo, prima_anual FROM Polizas
+SELECT id_poliza, estado, tipo, prima_anual FROM Polizas
+WHERE estado = 'Activa'
 ORDER BY prima_anual DESC;
 
 -- 04. [Básica] Contar cuántos clientes hay por ciudad.
-SELECT nombre, COUNT(nombre) AS numero, ciudad FROM Clientes
-GROUP BY ciudad;
+SELECT ciudad, COUNT(nombre) AS numero_clientes FROM Clientes
+GROUP BY ciudad
+ORDER BY numero_clientes DESC;
 
 -- 05. [Básica] Calcular promedio, mínimo y máximo de prima anual por tipo de seguro.
 SELECT tipo, 
@@ -163,35 +165,120 @@ SELECT tipo,
     MIN(prima_anual) AS minimo, 
     MAX(prima_anual) AS maximo 
 FROM Polizas 
-GROUP BY tipo
+GROUP BY tipo;
+
+
 
 -- 06. [Intermedia] Listar póliza, nombre del cliente, agente y tipo de seguro.
-
+SELECT p.id_poliza, c.nombre AS cliente, a.nombre AS agente, p.tipo
+FROM Polizas AS p 
+JOIN Clientes AS c ON p.id_cliente = c.id_cliente
+JOIN Agentes AS a ON p.id_agente = a.id_agente;
 
 -- 07. [Intermedia] Calcular el total de primas anuales contratadas por sucursal, incluyendo pólizas canceladas e indicando que es suma nominal contratada, no ingreso cobrado.
+SELECT a.sucursal, SUM(p.prima_anual) AS total_primas_contratadas
+FROM Polizas AS p
+JOIN Agentes AS a ON p.id_agente = a.id_agente
+GROUP BY a.sucursal;
 
 -- 08. [Intermedia] Mostrar clientes y su número de pólizas, incluso quienes no tienen pólizas.
+SELECT c.nombre, COUNT(p.id_poliza) AS numero_polizas
+FROM Clientes AS c
+LEFT JOIN Polizas AS p ON c.id_cliente = p.id_cliente
+GROUP BY c.id_cliente, c.nombre;
 
 -- 09. [Intermedia] Mostrar cada póliza con total efectivamente pagado, incluyendo las que no tienen pagos.
+SELECT p.id_poliza, p.tipo, COALESCE(SUM(pg.monto), 0) AS total_pagado
+FROM Polizas AS p 
+LEFT JOIN Pagos AS pg ON p.id_poliza = pg.id_poliza
+GROUP BY p.id_poliza, p.tipo;
 
 -- 10. [Intermedia] Calcular por tipo el número y monto total de siniestros aprobados.
+SELECT p.tipo, COUNT(s.id_siniestro) AS numero_siniestros, SUM(s.monto_reclamado) AS total_siniestros
+FROM Polizas AS p
+JOIN Siniestros AS s ON p.id_poliza = s.id_poliza
+WHERE s.estatus = 'Aprobado'
+GROUP BY p.tipo;
+
+
 
 -- 11. [Subconsulta] Listar pólizas cuya prima anual supera la prima promedio de todas las pólizas.
+SELECT id_poliza, tipo, prima_anual
+FROM Polizas
+WHERE prima_anual > (SELECT AVG(prima_anual) FROM Polizas);
 
 -- 12. [Subconsulta] Mostrar los clientes con al menos un siniestro aprobado, usando IN.
+SELECT nombre
+FROM Clientes
+WHERE id_cliente IN (SELECT DISTINCT id_cliente FROM Siniestros WHERE estatus = 'Aprobado');
 
 -- 13. [Subconsulta] Encontrar pólizas que no registran siniestros usando NOT EXISTS.
+SELECT id_poliza, tipo
+FROM Polizas AS p
+WHERE NOT EXISTS (SELECT 1 FROM Siniestros AS s WHERE s.id_poliza = p.id_poliza);
 
 -- 14. [Subconsulta] Listar clientes cuya edad es superior a la edad promedio de todos los clientes.
+SELECT nombre
+FROM Clientes
+WHERE edad > (SELECT AVG(edad) FROM Clientes);
 
 -- 15. [Subconsulta] Mostrar las pólizas con prima máxima dentro de su tipo, usando subconsulta correlacionada.
+SELECT id_poliza, tipo, prima_anual
+FROM Polizas AS p1
+WHERE prima_anual = (SELECT MAX(prima_anual) FROM Polizas AS p2 WHERE p2.tipo = p1.tipo);
 
 -- 16. [Subconsulta] Listar agentes que gestionan pólizas con prima mayor a 18000 mediante EXISTS.
+SELECT nombre
+FROM Agentes AS a
+WHERE EXISTS (SELECT 1 FROM Polizas AS p WHERE p.id_agente = a.id_agente AND p.prima_anual > 18000);
 
 -- 17. [Subconsulta] Encontrar clientes cuyo total de primas contratadas supera el promedio del total por cliente CON pólizas (una subconsulta en FROM).
+SELECT c.nombre
+FROM Clientes AS c
+WHERE (SELECT SUM(p.prima_anual) FROM Polizas AS p WHERE p.id_cliente = c.id_cliente) > 
+(SELECT AVG(total) FROM (SELECT SUM(p.prima_anual) AS total FROM Polizas AS p GROUP BY p.id_cliente) AS sub);
 
 -- 18. [Subconsulta] Encontrar sucursales cuyo monto nominal de primas contratadas supera el promedio de las sumas por sucursal.
+SELECT a.sucursal
+FROM Agentes AS a
+JOIN Polizas AS p ON a.id_agente = p.id_agente
+GROUP BY a.sucursal
+HAVING SUM(p.prima_anual) > (
+    SELECT AVG(total) 
+    FROM (
+        SELECT SUM(p2.prima_anual) AS total 
+        FROM Polizas AS p2 
+        JOIN Agentes AS a2 ON p2.id_agente = a2.id_agente
+        GROUP BY a2.sucursal
+    ) AS sub
+);
+
+
 
 -- 19. [Reto] Mostrar por cliente el total pagado y total de siniestros aprobados sin multiplicar filas por unir tablas de detalle.
+SELECT c.nombre, 
+    COALESCE(SUM(p.total_pagado), 0) AS total_pagado, 
+    COALESCE(SUM(s.total_siniestros), 0) AS total_siniestros
+FROM Clientes AS c
+LEFT JOIN (
+    SELECT po.id_cliente, SUM(pa.monto) AS total_pagado
+    FROM Polizas AS po
+    JOIN Pagos AS pa ON pa.id_poliza = po.id_poliza
+    GROUP BY po.id_cliente
+) AS p ON c.id_cliente = p.id_cliente
+LEFT JOIN (
+    SELECT po.id_cliente, SUM(si.monto_reclamado) AS total_siniestros
+    FROM Polizas AS po
+    JOIN Siniestros AS si ON po.id_poliza = si.id_poliza
+    WHERE si.estatus = 'Aprobado'
+    GROUP BY po.id_cliente
+) AS s ON c.id_cliente = s.id_cliente
+
+
 
 -- 20. [Reto] Calcular por tipo de seguro el cociente: monto reclamado de siniestros aprobados / primas anuales contratadas. Aclarar que es un indicador ilustrativo, NO siniestralidad actuarial real.
+SELECT p.tipo,
+    COALESCE(SUM(s.monto_reclamado), 0) / COALESCE(SUM(p.prima_anual), 1) AS cociente
+FROM Polizas AS p
+LEFT JOIN Siniestros AS s ON p.id_poliza = s.id_poliza AND s.estatus = 'Aprobado'
+GROUP BY p.tipo;

@@ -155,22 +155,19 @@ ORDER BY precio DESC;
 -- CONSULTA 7 - Producto con categoria --
 SELECT Productos.nombre_producto, Categorias.nombre_categoria, Productos.precio
 FROM Productos
-INNER JOIN Categorias
-ON Productos.id_categoria = Categorias.id_categoria;
+INNER JOIN Categorias ON Productos.id_categoria = Categorias.id_categoria;
 
 
 -- CONSULTA 8 - Producto con proveedor --
 SELECT Productos.nombre_producto, Proveedores.nombre_proveedor, Productos.precio
 FROM Productos
-INNER JOIN Proveedores
-ON Productos.id_proveedor = Proveedores.id_proveedor;
+INNER JOIN Proveedores ON Productos.id_proveedor = Proveedores.id_proveedor;
 
 
 -- CONSULTA 9 - Ventas con cliente --
 SELECT Ventas.id_venta, Ventas.fecha, Clientes.nombre, Clientes.apellidos
 FROM Ventas
-INNER JOIN Clientes
-ON Ventas.id_cliente = Clientes.id_cliente;
+INNER JOIN Clientes ON Ventas.id_cliente = Clientes.id_cliente;
 
 
 -- CONSULTA 10 - Detalle completo de ventas --  

@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS ;
+
+CREATE TABLE  (
+    INTEGER PRIMARY KEY AUTOINCREMENT,
+    VARCHAR(100) NOT NULL,
+    DOUBLE NOT NULL CHECK (presupuesto >= 0),
+    NOT NULL CHECK (gastos >= 0)
+);
+
+SELECT * FROM departamento ;

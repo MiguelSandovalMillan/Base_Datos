@@ -106,7 +106,9 @@ GROUP BY Cursos.nombre_curso;
 
 -- ========================================
 -- ============= EJERCICIO 3 ==============
--- ========================================
+-- ======================================== 
+
+
 
 CREATE TABLE Libros (
     id_libro INTEGER PRIMARY KEY,
@@ -189,3 +191,9 @@ FROM Compras
 INNER JOIN Libros ON Compras.id_libro = Libros.id_libro
 WHERE Libros.titulo = '1984'
 GROUP BY Libros.titulo;
+
+
+
+-- ========================================
+-- ============= EJERCICIO 4 ==============
+-- ======================================== 

@@ -80,6 +80,93 @@ ROLLBACK;
 SELECT * FROM Polizas WHERE id_poliza = 102;
 SELECT * FROM Pagos WHERE id_poliza = 102;
 
+
+
 -- ===============================================================
---              ROLLBACK DE OPERACION NO AUTORIZADA
+--              SAVEPOINT REVERSION PARCIAL
 -- ===============================================================
+
+BEGIN TRANSACTION;
+
+UPDATE Polizas
+SET saldo_pendiente = saldo_pendiente - 1000.00
+WHERE id_poliza = 103;
+
+SAVEPOINT punto_seguro;
+
+UPDATE Polizas
+SET saldo_pendiente = saldo_pendiente - 500.00
+WHERE id_poliza = 103;
+
+ROLLBACK TO punto_seguro;
+COMMIT;
+
+SELECT * FROM Polizas WHERE id_poliza = 103;
+
+
+
+-- ===============================================================
+--                  CONTROL DE CONCURRENCIA
+-- ===============================================================
+
+BEGIN IMMEDIATE;
+
+UPDATE Polizas
+SET saldo_pendiente = saldo_pendiente - 3000.00
+WHERE id_poliza = 102 AND saldo_pendiente >= 3000.00;
+
+COMMIT;
+
+
+BEGIN IMMEDIATE;
+
+UPDATE Polizas
+SET saldo_pendiente = saldo_pendiente - 5000.00
+WHERE id_poliza = 102 AND saldo_pendiente >= 5000.00;
+
+COMMIT;
+
+SELECT * FROM Polizas WHERE id_poliza = 102;
+
+
+-- ===============================================================
+--                 EJERCICIO INTEGRADOR AUTONOMO
+-- ===============================================================
+
+DELETE FROM Pagos;
+
+UPDATE Polizas SET saldo_pendiente = 12000.00 WHERE id_poliza = 101;
+UPDATE Polizas SET saldo_pendiente = 18000.00 WHERE id_poliza = 102;
+UPDATE Polizas SET saldo_pendiente = 24000.00 WHERE id_poliza = 103;
+
+
+SELECT * FROM Polizas WHERE id_poliza = 103;
+
+-- Pago A: $2,500 
+BEGIN IMMEDIATE;
+INSERT INTO Pagos (id_poliza, monto) VALUES (103, 2500.00);
+UPDATE Polizas SET saldo_pendiente = saldo_pendiente - 2500.00 
+WHERE id_poliza = 103 AND saldo_pendiente >= 2500.00;
+SELECT changes() AS filas_afectadas_A; 
+COMMIT;
+
+-- Pago B: $1,800 
+BEGIN IMMEDIATE;
+INSERT INTO Pagos (id_poliza, monto) VALUES (103, 1800.00);
+UPDATE Polizas SET saldo_pendiente = saldo_pendiente - 1800.00 
+WHERE id_poliza = 103 AND saldo_pendiente >= 1800.00;
+SELECT changes() AS filas_afectadas_B; 
+COMMIT;
+
+-- Pago C: $25,000 
+BEGIN IMMEDIATE;
+INSERT INTO Pagos (id_poliza, monto) VALUES (103, 25000.00);
+UPDATE Polizas SET saldo_pendiente = saldo_pendiente - 25000.00 
+WHERE id_poliza = 103 AND saldo_pendiente >= 25000.00;
+SELECT changes() AS filas_afectadas_C; 
+
+ROLLBACK;
+
+
+SELECT * FROM Polizas;
+SELECT * FROM Pagos;
